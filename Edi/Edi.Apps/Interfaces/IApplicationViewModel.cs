@@ -110,6 +110,8 @@
 		/// </summary>
 		/// <param name="bActivate"></param>
 		void EnableMainWindowActivated(bool bActivate);
-		#endregion methods
-	}
+
+        void ShowStartPage();
+        #endregion methods
+    }
 }

@@ -3,10 +3,11 @@
     using Edi.Settings.Interfaces;
     using Edi.Settings.ProgramSettings;
     using Edi.Settings.UserProfile;
-    using Edi.Themes.Interfaces;
+    using Edi.Interfaces.App;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
     using UnitComboLib.Models.Unit;
+    using Edi.Themes.Interfaces;
 
     public sealed class SettingsFactory
     {
@@ -79,9 +80,9 @@
         /// </summary>
         /// <param name="themesManager"></param>
         /// <returns></returns>
-        public static ISettingsManager CreateSettingsManager(IThemesManager themesManager)
+        public static ISettingsManager CreateSettingsManager(IThemesManager themesManager, IAppCore appHelpers)
         {
-            return new SettingsManagerImpl(themesManager);
+            return new SettingsManagerImpl(themesManager, appHelpers);
         }
     }
 }

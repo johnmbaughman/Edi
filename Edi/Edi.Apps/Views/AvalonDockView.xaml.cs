@@ -1,31 +1,35 @@
 ﻿namespace Edi.Apps.Views
 {
-	using System;
-	using System.IO;
-	using System.Windows;
-	using System.Windows.Controls;
-	using System.Windows.Input;
-	using System.Windows.Threading;
-	using Events;
-	using Xceed.Wpf.AvalonDock;
-	using Xceed.Wpf.AvalonDock.Layout;
-	using Xceed.Wpf.AvalonDock.Layout.Serialization;
+    using System;
+    using System.IO;
+    using System.Windows;
+    using System.Windows.Controls;
+    using System.Windows.Threading;
+    using Edi.Interfaces.Events;
+    using Xceed.Wpf.AvalonDock;
+    using Xceed.Wpf.AvalonDock.Layout;
+    using Xceed.Wpf.AvalonDock.Layout.Serialization;
 
-	/// <summary>
-	/// Interaction logic for AvalonDockView.xaml
-	/// </summary>
-	[TemplatePartAttribute(Name = "PART_DockView", Type = typeof(DockingManager))]
+    /// <summary>
+    /// Interaction logic for AvalonDockView.xaml
+    /// </summary>
+    [TemplatePartAttribute(Name = PART_DockView, Type = typeof(DockingManager))]
 	public partial class AvalonDockView : UserControl
 	{
-		#region fields
-		protected static readonly log4net.ILog Logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        #region fields
+        /// <summary>
+        /// defines the nme of the required <see cref="DockingManager"/> control in the attached control XAML
+        /// </summary>
+        const string PART_DockView = "PART_DockView";
 
-		private DockingManager _mDockManager;
+        protected static readonly log4net.ILog Logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-		private DataTemplateSelector _mLayoutItemTemplateSelector;
-		private DataTemplate _mDocumentHeaderTemplate;
-		private StyleSelector _mLayoutItemContainerStyleSelector;
-		private ILayoutUpdateStrategy _mLayoutUpdateStrategy;
+		private DockingManager _PART_DockView;
+
+		private DataTemplateSelector _LayoutItemTemplateSelector;
+		private DataTemplate _DocumentHeaderTemplate;
+		private StyleSelector _LayoutItemContainerStyleSelector;
+		private ILayoutUpdateStrategy _LayoutUpdateStrategy;
 
 		private string _mOnLoadXmlLayout;
 		#endregion fields
@@ -45,7 +49,6 @@
 		/// </summary>
 		public AvalonDockView()
 		{
-			//// this.InitializeComponent();
 			LayoutId = Guid.NewGuid();
 		}
 		#endregion constructor
@@ -69,7 +72,7 @@
 		{
 			get
 			{
-				if (_mDockManager == null)
+				if (_PART_DockView == null)
 					return String.Empty;
 
 				string xmlLayoutString = string.Empty;
@@ -77,7 +80,7 @@
 				{
 					using (StringWriter fs = new StringWriter())
 					{
-						XmlLayoutSerializer xmlLayout = new XmlLayoutSerializer(_mDockManager);
+						XmlLayoutSerializer xmlLayout = new XmlLayoutSerializer(_PART_DockView);
 
 						xmlLayout.Serialize(fs);
 
@@ -101,35 +104,31 @@
 		{
 			base.OnApplyTemplate();
 
-			_mDockManager = Template.FindName("PART_DockView", this) as DockingManager;
-
-			SetCustomLayoutItems();
-			////this.LoadXmlLayout(this.mOnLoadXmlLayout);
+            Loaded += AvalonDockView_Loaded;
 		}
 
-
-		/// <summary>
-		/// Class Constructor
-		/// </summary>
-		/// <param name="paneSel"></param>
-		/// <param name="documentHeaderTemplate"></param>
-		/// <param name="panesStyleSelector"></param>
-		/// <param name="layoutInitializer"></param>
-		/// <param name="layoutId"></param>
-		public void SetTemplates(DataTemplateSelector paneSel,
-								 DataTemplate documentHeaderTemplate,
-								 StyleSelector panesStyleSelector,
-								 ILayoutUpdateStrategy layoutInitializer,
-								 Guid layoutId
+        /// <summary>
+        /// Class Constructor
+        /// </summary>
+        /// <param name="paneSel"></param>
+        /// <param name="documentHeaderTemplate"></param>
+        /// <param name="panesStyleSelector"></param>
+        /// <param name="layoutInitializer"></param>
+        /// <param name="layoutId"></param>
+        public void InitTemplates(DataTemplateSelector paneSel,
+								  DataTemplate documentHeaderTemplate,
+								  StyleSelector panesStyleSelector,
+								  ILayoutUpdateStrategy layoutInitializer,
+								  Guid layoutId
 								)
 		{
-			_mLayoutItemTemplateSelector = paneSel;
-			_mDocumentHeaderTemplate = documentHeaderTemplate;
-			_mLayoutItemContainerStyleSelector = panesStyleSelector;
-			_mLayoutUpdateStrategy = layoutInitializer;
+			_LayoutItemTemplateSelector = paneSel;
+			_DocumentHeaderTemplate = documentHeaderTemplate;
+			_LayoutItemContainerStyleSelector = panesStyleSelector;
+			_LayoutUpdateStrategy = layoutInitializer;
 			LayoutId = layoutId;
 
-			if (_mDockManager == null)
+			if (_PART_DockView == null)
 				return;
 
 			SetCustomLayoutItems();
@@ -137,14 +136,13 @@
 
 		#region Workspace Layout Management
 		/// <summary>
-		/// Is executed when PRISM sends an Xml layout string notification
-		/// via a sender which could be a viewmodel that wants to receive
-		/// the load <seealso cref="LoadLayoutEvent"/>.
+		/// Is executed when subscriber (viewmodel) sends an Xml layout string
+        /// notification that wants to receive the load <seealso cref="LoadLayoutEvent"/>.
 		/// 
 		/// Save layout is triggered by the containing window onClosed event.
 		/// </summary>
 		/// <param name="args"></param>
-		public void OnLoadLayout(LoadLayoutEventArgs args)
+		public void OnLoadLayout(object sender, LoadLayoutEventArgs args)
 		{
 			if (args == null)
 				return;
@@ -154,7 +152,7 @@
 
 			_mOnLoadXmlLayout = args.XmlLayout;
 
-			if (_mDockManager == null)
+			if (_PART_DockView == null)
 				return;
 
 			LoadXmlLayout(_mOnLoadXmlLayout);
@@ -172,7 +170,7 @@
 				{
 					try
 					{
-						layoutSerializer = new XmlLayoutSerializer(_mDockManager);
+						layoutSerializer = new XmlLayoutSerializer(_PART_DockView);
 						layoutSerializer.LayoutSerializationCallback += UpdateLayout;
 						layoutSerializer.Deserialize(sr);
 					}
@@ -223,33 +221,41 @@
 				Console.WriteLine(exp.Message);
 			}
 		}
-		#endregion Workspace Layout Management
+        #endregion Workspace Layout Management
 
-		/// <summary>
-		/// Assigns the currently assigned custom layout controls to the AvalonDock DockingManager.
-		/// </summary>
-		private void SetCustomLayoutItems()
+        /// <summary>
+        /// Method invokes when control is loaded (is visible in UI)
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void AvalonDockView_Loaded(object sender, RoutedEventArgs e)
+        {
+            _PART_DockView = Template.FindName("PART_DockView", this) as DockingManager;
+
+            SetCustomLayoutItems();
+            ////this.LoadXmlLayout(this.mOnLoadXmlLayout);
+        }
+
+        /// <summary>
+        /// Assigns the currently assigned custom layout controls to the AvalonDock DockingManager.
+        /// </summary>
+        private void SetCustomLayoutItems()
 		{
-			if (_mDockManager == null)
+			if (_PART_DockView == null)
 				return;
 
-			if (_mLayoutItemTemplateSelector != null)
-				_mDockManager.LayoutItemTemplateSelector = _mLayoutItemTemplateSelector;
+			if (_LayoutItemTemplateSelector != null)
+				_PART_DockView.LayoutItemTemplateSelector = _LayoutItemTemplateSelector;
 
-			if (_mDocumentHeaderTemplate != null)
-				_mDockManager.DocumentHeaderTemplate = _mDocumentHeaderTemplate;
+			if (_DocumentHeaderTemplate != null)
+				_PART_DockView.DocumentHeaderTemplate = _DocumentHeaderTemplate;
 
-			if (_mLayoutItemContainerStyleSelector != null)
-				_mDockManager.LayoutItemContainerStyleSelector = _mLayoutItemContainerStyleSelector;
+			if (_LayoutItemContainerStyleSelector != null)
+				_PART_DockView.LayoutItemContainerStyleSelector = _LayoutItemContainerStyleSelector;
 
-			if (_mLayoutUpdateStrategy != null)
-				_mDockManager.LayoutUpdateStrategy = _mLayoutUpdateStrategy;
+			if (_LayoutUpdateStrategy != null)
+				_PART_DockView.LayoutUpdateStrategy = _LayoutUpdateStrategy;
 		}
 		#endregion methods
-
-		protected override void OnKeyDown(KeyEventArgs e)
-		{
-			base.OnKeyDown(e);
-		}
 	}
 }

@@ -5,10 +5,10 @@
     using System.Threading.Tasks;
     using System.Xml;
     using System.Xml.Serialization;
-    using Edi.Core.Models;
     using Edi.Settings.Interfaces;
     using Edi.Settings.ProgramSettings;
     using Edi.Settings.UserProfile;
+    using Edi.Interfaces.App;
     using Edi.Themes.Interfaces;
 
     /// <summary>
@@ -25,29 +25,36 @@
 		private IOptions _SettingData = null;
 		private IProfile _SessionData = null;
 
-		private readonly IThemesManager _ThemesManager = null;
-		#endregion fields
+		private readonly IThemesManager _ThemesManager;
+        private readonly IAppCore _AppHelpers;
+        #endregion fields
 
-		#region constructor
-		/// <summary>
-		/// Class constructor
-		/// </summary>
-		public SettingsManagerImpl(IThemesManager themesManager)
+        #region constructor
+        /// <summary>
+        /// Class constructor
+        /// </summary>
+        public SettingsManagerImpl(IThemesManager themesManager, IAppCore appHelpers)
+            : this()
 		{
 			_ThemesManager = themesManager;
+            _AppHelpers = appHelpers;
 
-			_SettingData = new Options(_ThemesManager);
-			_SessionData = new Profile();
+            _SettingData = new Options(_ThemesManager);
 		}
-		#endregion constructor
 
-		#region properties
-		/// <summary>
-		/// Gets the program options for the complete application.
-		/// Program options are user specific settings that are rarelly
-		/// changed and can be customized per user.
-		/// </summary>
-		IOptions ISettingsManager.SettingData
+        protected SettingsManagerImpl()
+        {
+            _SessionData = new Profile();
+        }
+        #endregion constructor
+
+        #region properties
+        /// <summary>
+        /// Gets the program options for the complete application.
+        /// Program options are user specific settings that are rarelly
+        /// changed and can be customized per user.
+        /// </summary>
+        IOptions ISettingsManager.SettingData
 		{
 			get
 			{
@@ -86,7 +93,7 @@
         /// Get a path to the directory where the application
         /// can persist/load user data on session exit and re-start.
         /// </summary>
-        public string AppDir { get { return AppHelpers.DirAppData; } }
+        public string AppDir { get { return _AppHelpers.DirAppData; } }
 		#endregion properties
 
 		#region methods
@@ -110,9 +117,9 @@
         /// <param name="settingsFileName"></param>
         /// <param name="themesManager"></param>
         /// <returns></returns>
-        Task<IOptions> ISettingsManager.LoadOptionsAsync(string settingsFileName,
-                                                         IThemesManager themesManager,
-                                                         IOptions programSettings = null)
+        public Task<IOptions> LoadOptionsAsync(string settingsFileName,
+                                               IThemesManager themesManager,
+                                               IOptions programSettings = null)
         {
             return Task.Run(() => { return LoadOptions(settingsFileName, themesManager, programSettings); });
         }
